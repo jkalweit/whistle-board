@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<App>("WhistleBoard", 1, 0, "App");
     qmlRegisterType<WhistleListener>("WhistleBoard", 1, 0, "WhistleListener");
+    qmlRegisterType<DFTOutput>("WhistleBoard", 1, 0, "DFTOutput");
     qmlRegisterType<FrequencyRange>("WhistleBoard", 1, 0, "FrequencyRange");
 
 

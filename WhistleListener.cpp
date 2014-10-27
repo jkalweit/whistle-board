@@ -2,20 +2,39 @@
 #include <QThread>
 #include <QDebug>
 #include <qendian.h>
-
+#include <qmath.h>
+#include <math.h>
 
 WhistleListener::WhistleListener(QObject *parent) :
     QIODevice(parent)
 {
-    m_N = 256;
+    m_N = 512;
     m_currIndex = 0;
+
+    m_window = new double[m_N];
+    for(int i = 0; i < m_N; i++) {
+      m_window[i] = 0.54 - (0.46 * qCos( 2 * M_PI * (i / (m_N - 1))));
+    }
+
     m_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*m_N);
+    //m_inWindowed = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*m_N);
     m_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*m_N);
     m_plan = fftw_plan_dft_1d(m_N, m_in, m_out, FFTW_FORWARD, FFTW_ESTIMATE);
 
-
-
     for(int i = 0; i < m_N / 2; i++) {
+        m_outputs.append(new DFTOutput());
+    }
+
+    m_historyDepth = 8;
+    m_history = new double*[m_N / 2];
+    for(int i = 0; i < m_N / 2; i++) {
+        m_history[i] = new double[m_historyDepth];
+    }
+
+    m_bucketSize = 32;
+    m_numBuckets = m_N / 2 / m_bucketSize;
+
+    for(int i = 0; i < m_numBuckets; i++) {
         m_frequencyRanges.append(new FrequencyRange());
     }
 }
@@ -65,9 +84,9 @@ void WhistleListener::createAudioInput()
 
 void WhistleListener::notified()
 {
-    qWarning() << "bytesReady = " << m_audioInput->bytesReady()
-               << ", " << "elapsedUSecs = " <<m_audioInput->elapsedUSecs()
-               << ", " << "processedUSecs = "<<m_audioInput->processedUSecs();
+//    qWarning() << "bytesReady = " << m_audioInput->bytesReady()
+//               << ", " << "elapsedUSecs = " <<m_audioInput->elapsedUSecs()
+//               << ", " << "processedUSecs = "<<m_audioInput->processedUSecs();
 }
 
 
@@ -123,12 +142,46 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
                 value = qAbs(*reinterpret_cast<const float*>(ptr) * 0x7fffffff); // assumes 0-1.0
             }
 
-            m_in[m_currIndex++][0] = value;
+            m_in[m_currIndex][0] = m_window[m_currIndex] * value;
+            m_currIndex++;
+
             if(m_currIndex >= m_N) {
                 m_currIndex = 0;
+
                 fftw_execute(m_plan);
+
+                double smoothed[m_N / 2];
+                for(int i = 2; i < (m_N / 2) - 3; i++) {
+                    smoothed[i] = (m_out[i - 2][0] + m_out[i - 1][0] + m_out[i][0] + m_out[i + 1][0] + m_out[i + 2][0]) / 5;
+
+                    for(int j = 1; j < m_historyDepth; j++) {
+                        m_history[i][j-1] = m_history[i][j];
+                    }
+                    m_history[i][m_historyDepth-1] = smoothed[i];
+                }
+
+                double avg;
+                for(int i = 0; i < (m_N / 2); i++) {
+                    avg = 0;
+                    for(int j = 0; j < m_historyDepth; j++) {
+                        avg += m_history[i][j];
+                    }
+                    smoothed[i] = avg / m_historyDepth;
+                }
+
+                double temp[m_numBuckets];
+                for(int i = 0; i < m_numBuckets; i++) {
+                    temp[i] = 0;
+                }
+
                 for(int i = 0; i < m_N / 2; i++) {
-                    m_frequencyRanges[i]->setValue(m_out[i][0] / 100);
+                    m_outputs[i]->setValue(smoothed[i]); // m_out[i][0] / 10);
+                    int bucket = i / m_numBuckets;
+                    temp[bucket] += smoothed[i]; // m_out[i][0];
+                }
+
+                for(int i = 0; i < m_numBuckets; i++) {
+                    m_frequencyRanges[i]->setValue(temp[i] / m_bucketSize);
                 }
             }
 
@@ -143,7 +196,9 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
     return len;
 }
 
-
+QQmlListProperty<DFTOutput> WhistleListener::outputs() {
+    return QQmlListProperty<DFTOutput>(this, m_outputs);
+}
 
 QQmlListProperty<FrequencyRange> WhistleListener::frequencies() {
     return QQmlListProperty<FrequencyRange>(this, m_frequencyRanges);

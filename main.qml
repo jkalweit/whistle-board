@@ -75,10 +75,10 @@ ApplicationWindow {
         anchors.bottom: parent.bottom
         width: parent.width
         height: parent.height
-        color: "#CC7777DD"
+        color: "transparent"
 
         Repeater {
-            model: app.whistleListener.frequencies
+            model: app.whistleListener.outputs
 
             Rectangle {
                  width: chart.width / (app.whistleListener.N / 2)
@@ -87,6 +87,28 @@ ApplicationWindow {
                  anchors.left: chart.left
                  anchors.leftMargin: width * index
                  color: "#CCDD7777"
+            }
+        }
+    }
+
+    Rectangle {
+        id: buckets
+        anchors.right: parent.right
+        anchors.top: parent.top
+        width: parent.width
+        height: parent.height
+        color: "transparent"
+
+        Repeater {
+            model: app.whistleListener.frequencies
+
+            Rectangle {
+                 width: buckets.width / app.whistleListener.numBuckets
+                 height: modelData.value
+                 anchors.bottom: buckets.bottom
+                 anchors.left: buckets.left
+                 anchors.leftMargin: width * index
+                 color: "#CC77DD77"
             }
         }
     }

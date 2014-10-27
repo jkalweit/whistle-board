@@ -10,7 +10,8 @@ SOURCES += main.cpp \
     App.cpp \
     FrequencyRange.cpp \
     AudioInput.cpp \
-    WhistleListener.cpp
+    WhistleListener.cpp \
+    DFTOutput.cpp
 
 RESOURCES += qml.qrc
 
@@ -24,4 +25,5 @@ HEADERS += \
     App.h \
     FrequencyRange.h \
     AudioInput.h \
-    WhistleListener.h
+    WhistleListener.h \
+    DFTOutput.h
