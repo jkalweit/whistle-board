@@ -3,8 +3,8 @@ import QtQuick.Controls 1.1
 
 ApplicationWindow {
     visible: true
-    width: 640
-    height: 480
+    width: 1024
+    height: 800
     title: qsTr("Hello World")
 
     menuBar: MenuBar {
@@ -15,6 +15,13 @@ ApplicationWindow {
                 onTriggered: Qt.quit();
             }
         }
+    }
+
+    Button {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        text: "Do Test"
+        onClicked: app.doTest()
     }
 
     function createBuckets() {
@@ -60,4 +67,29 @@ ApplicationWindow {
             }
         }
     }
+
+
+    Rectangle {
+        id: chart
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        width: parent.width
+        height: parent.height
+        color: "#CC7777DD"
+
+        Repeater {
+            model: app.whistleListener.frequencies
+
+            Rectangle {
+                 width: chart.width / (app.whistleListener.N / 2)
+                 height: modelData.value
+                 anchors.bottom: chart.bottom
+                 anchors.left: chart.left
+                 anchors.leftMargin: width * index
+                 color: "#CCDD7777"
+            }
+        }
+    }
+
+
 }

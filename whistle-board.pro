@@ -1,8 +1,16 @@
+CONFIG += c++11
+
 TEMPLATE = app
 
-QT += qml quick widgets
+QT += qml quick widgets multimedia
 
-SOURCES += main.cpp
+LIBS += -lfftw3
+
+SOURCES += main.cpp \
+    App.cpp \
+    FrequencyRange.cpp \
+    AudioInput.cpp \
+    WhistleListener.cpp
 
 RESOURCES += qml.qrc
 
@@ -11,3 +19,9 @@ QML_IMPORT_PATH =
 
 # Default rules for deployment.
 include(deployment.pri)
+
+HEADERS += \
+    App.h \
+    FrequencyRange.h \
+    AudioInput.h \
+    WhistleListener.h
