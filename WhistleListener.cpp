@@ -13,7 +13,7 @@ WhistleListener::WhistleListener(QObject *parent) :
 
     m_window = new double[m_N];
     for(int i = 0; i < m_N; i++) {
-      m_window[i] = 0.54 - (0.46 * qCos( 2 * M_PI * (i / (m_N - 1))));
+      m_window[i] = 0.54 - (0.46 * qCos((2 * M_PI * i) / (m_N - 1)));
     }
 
     m_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*m_N);
@@ -25,14 +25,14 @@ WhistleListener::WhistleListener(QObject *parent) :
         m_outputs.append(new DFTOutput());
     }
 
-    m_historyDepth = 8;
+    m_historyDepth = 2;
     m_history = new double*[m_N / 2];
     for(int i = 0; i < m_N / 2; i++) {
         m_history[i] = new double[m_historyDepth];
     }
 
     m_bucketSize = 32;
-    m_numBuckets = m_N / 2 / m_bucketSize;
+    m_numBuckets = m_N / m_bucketSize;
 
     for(int i = 0; i < m_numBuckets; i++) {
         m_frequencyRanges.append(new FrequencyRange());
@@ -152,7 +152,7 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
 
                 double smoothed[m_N / 2];
                 for(int i = 2; i < (m_N / 2) - 3; i++) {
-                    smoothed[i] = (m_out[i - 2][0] + m_out[i - 1][0] + m_out[i][0] + m_out[i + 1][0] + m_out[i + 2][0]) / 5;
+                    smoothed[i] = (abs(m_out[i - 2][0]) + abs(m_out[i - 1][0]) + abs(m_out[i][0]) + abs(m_out[i + 1][0]) + abs(m_out[i + 2][0])) / 5;
 
                     for(int j = 1; j < m_historyDepth; j++) {
                         m_history[i][j-1] = m_history[i][j];
@@ -174,10 +174,12 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
                     temp[i] = 0;
                 }
 
-                for(int i = 0; i < m_N / 2; i++) {
-                    m_outputs[i]->setValue(smoothed[i]); // m_out[i][0] / 10);
+
+
+                for(int i = 0; i < m_N / 2; i++) {                                        
+                    m_outputs[i]->setValue(smoothed[i] / 500); //smoothed[i] / 100); // m_out[i][0] / 10);
                     int bucket = i / m_numBuckets;
-                    temp[bucket] += smoothed[i]; // m_out[i][0];
+                    temp[bucket] += smoothed[i] / 100; // (smoothed[i]);
                 }
 
                 for(int i = 0; i < m_numBuckets; i++) {
@@ -197,9 +199,11 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
 }
 
 QQmlListProperty<DFTOutput> WhistleListener::outputs() {
-    return QQmlListProperty<DFTOutput>(this, m_outputs);
+    m_outputsFiltered = m_outputs.mid(32); // hacked bandpass filter :)
+    return QQmlListProperty<DFTOutput>(this, m_outputsFiltered);
 }
 
 QQmlListProperty<FrequencyRange> WhistleListener::frequencies() {
-    return QQmlListProperty<FrequencyRange>(this, m_frequencyRanges);
+    m_frequencyRangesFiltered = m_frequencyRanges.mid(2);  // hacked bandpass filter :)
+    return QQmlListProperty<FrequencyRange>(this, m_frequencyRangesFiltered);
 }

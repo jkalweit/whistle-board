@@ -17,56 +17,56 @@ ApplicationWindow {
         }
     }
 
-    Button {
-        anchors.top: parent.top
-        anchors.right: parent.right
-        text: "Do Test"
-        onClicked: app.doTest()
-    }
+//    Button {
+//        anchors.top: parent.top
+//        anchors.right: parent.right
+//        text: "Do Test"
+//        onClicked: app.doTest()
+//    }
 
-    function createBuckets() {
-        var min = 5000;
-        var max = 15000;
-        var numBuckets = 16;
-        var bucketSize = (max - min) / numBuckets;
-        var buckets = [];
-        for(var i = 0; i < 16; i++) {
-            buckets[i] = {
-                bucket: i,
-                min: min + (i * bucketSize),
-                max: min + ((i + 1) * bucketSize)
-            };
-        }
-        return buckets;
-    }
+//    function createBuckets() {
+//        var min = 5000;
+//        var max = 15000;
+//        var numBuckets = 16;
+//        var bucketSize = (max - min) / numBuckets;
+//        var buckets = [];
+//        for(var i = 0; i < 16; i++) {
+//            buckets[i] = {
+//                bucket: i,
+//                min: min + (i * bucketSize),
+//                max: min + ((i + 1) * bucketSize)
+//            };
+//        }
+//        return buckets;
+//    }
 
-    Grid {
-        anchors.fill: parent
-        rows: 4
-        columns: 4
-        spacing: 2
+//    Grid {
+//        anchors.fill: parent
+//        rows: 4
+//        columns: 4
+//        spacing: 2
 
-        Repeater {
-            model: createBuckets()
+//        Repeater {
+//            model: createBuckets()
 
-            Rectangle {
-                width: 100
-                height: 100
-                color: mouseArea.pressed ? "#DDDDFF" : "#7777AA"
+//            Rectangle {
+//                width: 100
+//                height: 100
+//                color: mouseArea.pressed ? "#DDDDFF" : "#7777AA"
 
-                Text {
-                    anchors.centerIn: parent
-                    text: modelData.min + " - " + modelData.max
-                }
+//                Text {
+//                    anchors.centerIn: parent
+//                    text: modelData.min + " - " + modelData.max
+//                }
 
-                MouseArea {
-                    id: mouseArea
-                    anchors.fill: parent
+//                MouseArea {
+//                    id: mouseArea
+//                    anchors.fill: parent
 
-                }
-            }
-        }
-    }
+//                }
+//            }
+//        }
+//    }
 
 
     Rectangle {
@@ -81,7 +81,7 @@ ApplicationWindow {
             model: app.whistleListener.outputs
 
             Rectangle {
-                 width: chart.width / (app.whistleListener.N / 2)
+                 width: chart.width / (app.whistleListener.outputs.length)
                  height: modelData.value
                  anchors.bottom: chart.bottom
                  anchors.left: chart.left
@@ -103,7 +103,7 @@ ApplicationWindow {
             model: app.whistleListener.frequencies
 
             Rectangle {
-                 width: buckets.width / app.whistleListener.numBuckets
+                 width: buckets.width / app.whistleListener.frequencies.length
                  height: modelData.value
                  anchors.bottom: buckets.bottom
                  anchors.left: buckets.left

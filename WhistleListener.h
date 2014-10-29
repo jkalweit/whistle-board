@@ -64,9 +64,11 @@ private:
     double** m_history;
 
     QList<DFTOutput*> m_outputs;
+    QList<DFTOutput*> m_outputsFiltered;
     int m_numBuckets;
     int m_bucketSize;
     QList<FrequencyRange*> m_frequencyRanges;
+    QList<FrequencyRange*> m_frequencyRangesFiltered;
 };
 
 #endif // WHISTLELISTENER_H
