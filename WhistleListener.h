@@ -18,11 +18,14 @@ class WhistleListener : public QIODevice
     Q_PROPERTY(int numBuckets MEMBER m_numBuckets NOTIFY numBucketsChanged)
     Q_PROPERTY(QQmlListProperty<DFTOutput> outputs READ outputs NOTIFY outputsChanged)
     Q_PROPERTY(QQmlListProperty<FrequencyRange> frequencies READ frequencies NOTIFY frequenciesChanged)
+    Q_PROPERTY(FrequencyRange* currentFrequency MEMBER m_currentFrequency WRITE setCurrentFrequency NOTIFY currentFrequencyChanged)
 public:
     explicit WhistleListener(QObject *parent = 0);
 
     void start();
     void stop();
+
+    void setCurrentFrequency(FrequencyRange* frequency);
 
     qint64 readData(char *data, qint64 maxlen);
     qint64 writeData(const char *data, qint64 len);
@@ -35,6 +38,7 @@ signals:
     void numBucketsChanged(int);
     void outputsChanged(QQmlListProperty<DFTOutput>);
     void frequenciesChanged(QQmlListProperty<FrequencyRange>);
+    void currentFrequencyChanged(FrequencyRange*);
 
 public slots:
     void startListening();
@@ -69,6 +73,8 @@ private:
     int m_bucketSize;
     QList<FrequencyRange*> m_frequencyRanges;
     QList<FrequencyRange*> m_frequencyRangesFiltered;
+
+    FrequencyRange* m_currentFrequency;
 };
 
 #endif // WHISTLELISTENER_H

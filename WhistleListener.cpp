@@ -6,7 +6,7 @@
 #include <math.h>
 
 WhistleListener::WhistleListener(QObject *parent) :
-    QIODevice(parent)
+    QIODevice(parent), m_currentFrequency(nullptr)
 {
     m_N = 512;
     m_currIndex = 0;
@@ -25,7 +25,7 @@ WhistleListener::WhistleListener(QObject *parent) :
         m_outputs.append(new DFTOutput());
     }
 
-    m_historyDepth = 2;
+    m_historyDepth = 3;
     m_history = new double*[m_N / 2];
     for(int i = 0; i < m_N / 2; i++) {
         m_history[i] = new double[m_historyDepth];
@@ -34,11 +34,65 @@ WhistleListener::WhistleListener(QObject *parent) :
     m_bucketSize = 32;
     m_numBuckets = m_N / m_bucketSize;
 
+
+
     for(int i = 0; i < m_numBuckets; i++) {
-        m_frequencyRanges.append(new FrequencyRange());
+        m_frequencyRanges.append(new FrequencyRange(this));
     }
+
+    m_frequencyRanges[9]->addCharacter("clear");
+    m_frequencyRanges[9]->addCharacter("b");
+    m_frequencyRanges[9]->addCharacter("v");
+    m_frequencyRanges[9]->addCharacter("k");
+    m_frequencyRanges[9]->addCharacter("j");
+
+    m_frequencyRanges[10]->addCharacter("c");
+    m_frequencyRanges[10]->addCharacter("u");
+    m_frequencyRanges[10]->addCharacter("m");
+    m_frequencyRanges[10]->addCharacter("w");
+
+    m_frequencyRanges[11]->addCharacter("o");
+    m_frequencyRanges[11]->addCharacter("i");
+    m_frequencyRanges[11]->addCharacter("n");
+    m_frequencyRanges[11]->addCharacter("s");
+
+    m_frequencyRanges[12]->addCharacter(" ");
+    m_frequencyRanges[12]->addCharacter("e");
+    m_frequencyRanges[12]->addCharacter("t");
+    m_frequencyRanges[12]->addCharacter("a");
+
+    m_frequencyRanges[13]->addCharacter("h");
+    m_frequencyRanges[13]->addCharacter("r");
+    m_frequencyRanges[13]->addCharacter("d");
+    m_frequencyRanges[13]->addCharacter("l");
+
+    m_frequencyRanges[14]->addCharacter("f");
+    m_frequencyRanges[14]->addCharacter("g");
+    m_frequencyRanges[14]->addCharacter("y");
+    m_frequencyRanges[14]->addCharacter("p");
+
+    m_frequencyRanges[15]->addCharacter(".");
+    m_frequencyRanges[15]->addCharacter("bkspc");
+    m_frequencyRanges[15]->addCharacter(",");
+    m_frequencyRanges[15]->addCharacter("x");
+    m_frequencyRanges[15]->addCharacter("q");
+    m_frequencyRanges[15]->addCharacter("z");
 }
 
+void WhistleListener::setCurrentFrequency(FrequencyRange* frequency) {
+    if(m_currentFrequency != frequency) {
+        m_currentFrequency = frequency;
+
+        for(int i = 0; i < m_frequencyRanges.length(); i++) {
+            if(m_frequencyRanges[i] != m_currentFrequency) {
+                m_frequencyRanges[i]->setIsActive(false);
+            }
+        }
+
+        m_currentFrequency->setIsActive(true);
+        currentFrequencyChanged(frequency);
+    }
+}
 
 void WhistleListener::start()
 {
@@ -182,8 +236,17 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
                     temp[bucket] += smoothed[i] / 100; // (smoothed[i]);
                 }
 
-                for(int i = 0; i < m_numBuckets; i++) {
+                FrequencyRange* dominateFrequency = nullptr;
+                for(int i = 0; i < m_numBuckets; i++) {                    
                     m_frequencyRanges[i]->setValue(temp[i] / m_bucketSize);
+                    if(i >= 9 && (!dominateFrequency || m_frequencyRanges[i]->value() > dominateFrequency->value())){
+                        if(m_frequencyRanges[i]->value() > 300) {
+                            dominateFrequency = m_frequencyRanges[i];
+                        }
+                    }
+                }
+                if(dominateFrequency) {
+                    setCurrentFrequency(dominateFrequency);
                 }
             }
 
@@ -199,11 +262,11 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
 }
 
 QQmlListProperty<DFTOutput> WhistleListener::outputs() {
-    m_outputsFiltered = m_outputs.mid(32); // hacked bandpass filter :)
+    m_outputsFiltered = m_outputs.mid(144); // hacked bandpass filter :)
     return QQmlListProperty<DFTOutput>(this, m_outputsFiltered);
 }
 
 QQmlListProperty<FrequencyRange> WhistleListener::frequencies() {
-    m_frequencyRangesFiltered = m_frequencyRanges.mid(2);  // hacked bandpass filter :)
+    m_frequencyRangesFiltered = m_frequencyRanges.mid(9);  // hacked bandpass filter :)
     return QQmlListProperty<FrequencyRange>(this, m_frequencyRangesFiltered);
 }
