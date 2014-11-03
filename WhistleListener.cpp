@@ -6,7 +6,7 @@
 #include <math.h>
 
 WhistleListener::WhistleListener(QObject *parent) :
-    QIODevice(parent), m_currentFrequency(nullptr)
+    QIODevice(parent), m_currentFrequency(nullptr), m_isTriggered(false), m_triggerDelayMilliseconds(100)
 {
     m_N = 512;
     m_currIndex = 0;
@@ -25,7 +25,7 @@ WhistleListener::WhistleListener(QObject *parent) :
         m_outputs.append(new DFTOutput());
     }
 
-    m_historyDepth = 3;
+    m_historyDepth = 2;
     m_history = new double*[m_N / 2];
     for(int i = 0; i < m_N / 2; i++) {
         m_history[i] = new double[m_historyDepth];
@@ -40,39 +40,45 @@ WhistleListener::WhistleListener(QObject *parent) :
         m_frequencyRanges.append(new FrequencyRange(this));
     }
 
+    m_frequencyRanges[9]->addCharacter("");
     m_frequencyRanges[9]->addCharacter("clear");
     m_frequencyRanges[9]->addCharacter("b");
     m_frequencyRanges[9]->addCharacter("v");
     m_frequencyRanges[9]->addCharacter("k");
     m_frequencyRanges[9]->addCharacter("j");
 
+    m_frequencyRanges[10]->addCharacter("");
     m_frequencyRanges[10]->addCharacter("c");
     m_frequencyRanges[10]->addCharacter("u");
     m_frequencyRanges[10]->addCharacter("m");
     m_frequencyRanges[10]->addCharacter("w");
 
+    m_frequencyRanges[11]->addCharacter("");
     m_frequencyRanges[11]->addCharacter("o");
     m_frequencyRanges[11]->addCharacter("i");
     m_frequencyRanges[11]->addCharacter("n");
     m_frequencyRanges[11]->addCharacter("s");
 
+    m_frequencyRanges[12]->addCharacter("");
     m_frequencyRanges[12]->addCharacter(" ");
     m_frequencyRanges[12]->addCharacter("e");
     m_frequencyRanges[12]->addCharacter("t");
     m_frequencyRanges[12]->addCharacter("a");
 
+    m_frequencyRanges[13]->addCharacter("");
     m_frequencyRanges[13]->addCharacter("h");
     m_frequencyRanges[13]->addCharacter("r");
     m_frequencyRanges[13]->addCharacter("d");
     m_frequencyRanges[13]->addCharacter("l");
 
+    m_frequencyRanges[14]->addCharacter("");
     m_frequencyRanges[14]->addCharacter("f");
     m_frequencyRanges[14]->addCharacter("g");
     m_frequencyRanges[14]->addCharacter("y");
     m_frequencyRanges[14]->addCharacter("p");
 
-    m_frequencyRanges[15]->addCharacter(".");
     m_frequencyRanges[15]->addCharacter("bkspc");
+    m_frequencyRanges[15]->addCharacter(".");    
     m_frequencyRanges[15]->addCharacter(",");
     m_frequencyRanges[15]->addCharacter("x");
     m_frequencyRanges[15]->addCharacter("q");
@@ -91,6 +97,20 @@ void WhistleListener::setCurrentFrequency(FrequencyRange* frequency) {
 
         m_currentFrequency->setIsActive(true);
         currentFrequencyChanged(frequency);
+    }
+}
+
+void WhistleListener::setIsTriggered(bool isTriggered) {
+    if(m_isTriggered != isTriggered) {
+        if(!m_lastTriggered.isValid() || QDateTime::currentDateTime() > m_lastTriggered.addMSecs(m_triggerDelayMilliseconds)) {
+            m_lastTriggered = QDateTime::currentDateTime();
+        } else {
+            // has not been longer than m_triggerDelayMilliseconds
+            return;
+        }
+
+        m_isTriggered = isTriggered;
+        isTriggeredChanged(m_isTriggered);
     }
 }
 
@@ -229,7 +249,6 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
                 }
 
 
-
                 for(int i = 0; i < m_N / 2; i++) {                                        
                     m_outputs[i]->setValue(smoothed[i] / 500); //smoothed[i] / 100); // m_out[i][0] / 10);
                     int bucket = i / m_numBuckets;
@@ -242,6 +261,11 @@ qint64 WhistleListener::writeData(const char *data, qint64 len)
                     if(i >= 9 && (!dominateFrequency || m_frequencyRanges[i]->value() > dominateFrequency->value())){
                         if(m_frequencyRanges[i]->value() > 300) {
                             dominateFrequency = m_frequencyRanges[i];
+                            if(!m_isTriggered) {
+                                setIsTriggered(true);
+                            }
+                        } else {
+                            setIsTriggered(false);
                         }
                     }
                 }

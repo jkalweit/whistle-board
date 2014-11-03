@@ -5,6 +5,7 @@
 #include <QAudioInput>
 #include <QByteArray>
 #include <QQmlListProperty>
+#include <QDateTime>
 #include <fftw3.h>
 #include "AudioInput.h"
 #include "DFTOutput.h"
@@ -19,6 +20,7 @@ class WhistleListener : public QIODevice
     Q_PROPERTY(QQmlListProperty<DFTOutput> outputs READ outputs NOTIFY outputsChanged)
     Q_PROPERTY(QQmlListProperty<FrequencyRange> frequencies READ frequencies NOTIFY frequenciesChanged)
     Q_PROPERTY(FrequencyRange* currentFrequency MEMBER m_currentFrequency WRITE setCurrentFrequency NOTIFY currentFrequencyChanged)
+    Q_PROPERTY(bool isTriggered MEMBER m_isTriggered WRITE setIsTriggered NOTIFY isTriggeredChanged)
 public:
     explicit WhistleListener(QObject *parent = 0);
 
@@ -26,6 +28,7 @@ public:
     void stop();
 
     void setCurrentFrequency(FrequencyRange* frequency);
+    void setIsTriggered(bool isTriggered);
 
     qint64 readData(char *data, qint64 maxlen);
     qint64 writeData(const char *data, qint64 len);
@@ -39,6 +42,7 @@ signals:
     void outputsChanged(QQmlListProperty<DFTOutput>);
     void frequenciesChanged(QQmlListProperty<FrequencyRange>);
     void currentFrequencyChanged(FrequencyRange*);
+    void isTriggeredChanged(bool);
 
 public slots:
     void startListening();
@@ -75,6 +79,10 @@ private:
     QList<FrequencyRange*> m_frequencyRangesFiltered;
 
     FrequencyRange* m_currentFrequency;
+
+    bool m_isTriggered;
+    QDateTime m_lastTriggered;
+    int m_triggerDelayMilliseconds;
 };
 
 #endif // WHISTLELISTENER_H

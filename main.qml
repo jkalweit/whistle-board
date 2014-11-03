@@ -17,9 +17,24 @@ ApplicationWindow {
         }
     }    
 
+    Connections {
+        target: app.whistleListener
+        onIsTriggeredChanged: {
+            if(app.whistleListener.isTriggered) {
+                console.log("triggered");
+                if(app.whistleListener.currentFrequency) {
+                    keyTimer.characterIndex++;
+                    keyTimer.restart();
+                }
+            } else {
+                console.log("un-triggered");
+            }
+        }
+    }
+
     Timer {
         id: keyTimer
-        interval: 300; running: false; repeat: false;
+        interval: 500; running: false; repeat: false;
         onTriggered: {
             var character = app.whistleListener.currentFrequency.getCharacter(characterIndex);
             if(character === "bkspc") {
@@ -33,6 +48,7 @@ ApplicationWindow {
         }
         property int characterIndex: -1
     }
+
 
     Rectangle {
         anchors.fill: parent
@@ -49,10 +65,26 @@ ApplicationWindow {
         }
     }
 
+    Rectangle {
+        id: currentIndex
+        anchors.top: parent.top
+        anchors.topMargin: 200
+        anchors.right: parent.right
+        anchors.rightMargin: 50
+        width: 100
+        height: 50
+
+        Text {
+            anchors.centerIn: parent
+            font.pixelSize: 14
+            text: "Index: " + keyTimer.characterIndex;
+        }
+    }
+
     TextField {
         id: currentText
         anchors.top: parent.top
-        anchors.topMargin: 150
+        anchors.topMargin: 200
         anchors.horizontalCenter: parent.horizontalCenter
         horizontalAlignment: TextInput.AlignHCenter
         width: 500

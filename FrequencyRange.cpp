@@ -29,9 +29,5 @@ void FrequencyRange::addCharacter(QString character) {
 }
 
 QString FrequencyRange::getCharacter(int index) {
-    if(index < m_characters.length()) {
-        return m_characters[index];
-    } else {
-        return "";
-    }
+    return m_characters[index % m_characters.length()];
 }
